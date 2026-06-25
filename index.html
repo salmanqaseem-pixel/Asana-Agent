@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Asana Script Agent</title>
+<style>
+:root{
+  --brand:#F06A6A;--brand-d:#D85555;
+  --bg:#F8F7F5;--surface:#fff;
+  --border:#E4E3DF;--text:#1A1A18;--t2:#6B6B67;--t3:#A0A09B;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:32px 16px;}
+.shell{width:100%;max-width:680px;display:flex;flex-direction:column;gap:12px;}
+
+/* Header */
+.header{display:flex;align-items:center;gap:10px;}
+.logo{width:32px;height:32px;background:var(--brand);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.logo svg{width:18px;height:18px;}
+h1{font-size:17px;font-weight:600;color:var(--text);}
+h1 span{font-size:12px;font-weight:400;color:var(--t3);margin-left:4px;}
+
+/* Project URL bar */
+.url-bar{display:flex;gap:8px;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px 12px;}
+.url-bar label{font-size:11px;font-weight:600;color:var(--t2);white-space:nowrap;text-transform:uppercase;letter-spacing:.05em;}
+.url-bar input{flex:1;font-size:13px;border:none;outline:none;background:transparent;color:var(--text);font-family:inherit;}
+.url-bar input::placeholder{color:var(--t3);}
+
+/* Chat */
+.chat{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;}
+.msgs{min-height:400px;max-height:560px;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;}
+
+.row{display:flex;gap:8px;align-items:flex-end;}
+.row.u{flex-direction:row-reverse;}
+.av{width:24px;height:24px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;}
+.av-a{background:#FEF0F0;color:var(--brand);}
+.av-u{background:var(--brand);color:#fff;}
+.bub{padding:9px 13px;border-radius:11px;font-size:13px;line-height:1.6;max-width:90%;}
+.bub-a{background:var(--bg);color:var(--text);border-bottom-left-radius:3px;}
+.bub-u{background:var(--brand);color:#fff;border-bottom-right-radius:3px;}
+
+/* Script card */
+.scard{max-width:96%;border-radius:11px;overflow:hidden;border:1px solid #252525;display:flex;flex-direction:column;}
+.scard-head{background:#1a1a1a;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;}
+.scard-name{font-size:11px;color:#777;font-family:monospace;}
+.scard-btns{display:flex;gap:5px;}
+.sbtn{font-size:11px;padding:4px 9px;border-radius:5px;border:1px solid #3a3a3a;background:transparent;color:#bbb;cursor:pointer;font-family:inherit;transition:all .15s;}
+.sbtn:hover{background:#2a2a2a;color:#fff;}
+.sbtn.dl{background:var(--brand);border-color:var(--brand);color:#fff;}
+.sbtn.dl:hover{background:var(--brand-d);}
+.scard-code{background:#0f0f0f;padding:14px;font-family:"Fira Mono","Courier New",monospace;font-size:11.5px;color:#d4d4d4;white-space:pre-wrap;word-break:break-word;max-height:320px;overflow-y:auto;line-height:1.65;}
+.scard-foot{background:#1a1a1a;padding:6px 12px;font-size:11px;color:#555;}
+.scard-foot a{color:var(--brand);text-decoration:none;}
+
+/* Input */
+.input-row{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--border);background:var(--surface);}
+.input-row textarea{flex:1;font-size:13px;padding:8px 11px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-family:inherit;outline:none;resize:none;height:40px;line-height:1.4;transition:all .15s;}
+.input-row textarea:focus{border-color:var(--brand);height:72px;}
+.send-btn{width:40px;height:40px;background:var(--brand);color:#fff;border:none;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s;}
+.send-btn:hover{background:var(--brand-d);}
+.send-btn:disabled{background:var(--border);cursor:not-allowed;}
+
+/* Chips */
+.chips{display:flex;flex-wrap:wrap;gap:5px;padding:9px 12px;border-top:1px solid var(--border);background:var(--bg);}
+.chip{font-size:11px;padding:3px 10px;border:1px solid var(--border);border-radius:20px;cursor:pointer;background:var(--surface);color:var(--t2);white-space:nowrap;transition:all .15s;}
+.chip:hover{border-color:var(--brand);color:var(--brand);}
+
+/* Typing */
+.typing{display:flex;gap:4px;align-items:center;padding:2px 0;}
+.dot{width:5px;height:5px;border-radius:50%;background:var(--t3);animation:bl 1.2s infinite;}
+.dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
+@keyframes bl{0%,80%,100%{opacity:.2}40%{opacity:1}}
+
+.footer{font-size:11px;color:var(--t3);text-align:center;line-height:1.8;}
+.footer a{color:var(--brand);text-decoration:none;}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <div class="header">
+    <div class="logo"><svg viewBox="0 0 24 24" fill="white"><circle cx="12" cy="7" r="3.5"/><circle cx="5.5" cy="17" r="3.5"/><circle cx="18.5" cy="17" r="3.5"/></svg></div>
+    <h1>Asana Script Agent <span>· Centrepoint</span></h1>
+  </div>
+
+  <div class="url-bar">
+    <label>Project</label>
+    <input type="text" id="proj-url" placeholder="Paste Asana project URL — https://app.asana.com/0/...">
+  </div>
+
+  <div class="chat">
+    <div class="msgs" id="msgs">
+      <div class="row">
+        <div class="av av-a">A</div>
+        <div class="bub bub-a">Hi! Paste your project URL above, then tell me what you need done on Asana.<br><br>I'll write a complete Python script you can run instantly in <a href="https://colab.research.google.com" target="_blank" style="color:var(--brand);">Google Colab</a> — no installs, no setup.<br><br>I can handle anything: link field updates, bulk due dates, assignees, custom fields, creating tasks, moving sections, and complex combinations.</div>
+      </div>
+    </div>
+    <div class="chips">
+      <span class="chip" onclick="q('Fix link fields for all tasks and subtasks in a section')">🔗 Fix link fields</span>
+      <span class="chip" onclick="q('Bulk update due dates for all tasks in a section')">📅 Bulk due dates</span>
+      <span class="chip" onclick="q('Assign all tasks in a section to a specific person')">👤 Bulk assignee</span>
+      <span class="chip" onclick="q('Mark all tasks in a section as complete')">✅ Mark complete</span>
+      <span class="chip" onclick="q('Create tasks in bulk from a list in a section')">➕ Create tasks</span>
+      <span class="chip" onclick="q('Create a new private project with custom sections')">📁 Create project</span>
+      <span class="chip" onclick="q('Move all tasks from one section to another')">↔ Move tasks</span>
+      <span class="chip" onclick="q('Update a custom field across all tasks in a section')">⚙️ Custom field</span>
+    </div>
+    <div class="input-row">
+      <textarea id="txt" placeholder="Describe what you need done on Asana..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();send();}"></textarea>
+      <button class="send-btn" id="send-btn" onclick="send()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="footer">
+    Scripts run in <a href="https://colab.research.google.com" target="_blank">Google Colab</a> — paste → <code style="background:var(--border);padding:1px 4px;border-radius:3px;font-size:10px;">!pip install requests</code> → ▶ Run
+  </div>
+
+</div>
+<script>
+const PAT     = "2/1201911179355363/1215998659217814:9371be45aa472aaaf05de8310fb349b3";
+const CLAUDE  = "https://api.anthropic.com/v1/messages";
+const scripts = {};
+let msgHistory = [];
+
+function getProjectInfo(){
+  const url = (document.getElementById("proj-url").value||"").trim();
+  const gid = (url.match(/\/(\d{10,})/)||[])[1]||"";
+  return { url, gid };
+}
+
+function esc(s){ return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function q(t){ document.getElementById("txt").value=t; send(); }
+
+function addBubble(role, html){
+  const msgs=document.getElementById("msgs");
+  const row=document.createElement("div"); row.className="row"+(role==="user"?" u":"");
+  const av=document.createElement("div"); av.className="av "+(role==="user"?"av-u":"av-a"); av.textContent=role==="user"?"Y":"A";
+  const b=document.createElement("div"); b.className="bub "+(role==="user"?"bub-u":"bub-a"); b.innerHTML=html;
+  row.appendChild(av); row.appendChild(b); msgs.appendChild(row); msgs.scrollTop=msgs.scrollHeight;
+}
+
+function addScriptCard(code, sid){
+  const msgs=document.getElementById("msgs");
+  const row=document.createElement("div"); row.className="row";
+  const av=document.createElement("div"); av.className="av av-a"; av.textContent="A";
+  const card=document.createElement("div"); card.className="scard";
+  card.innerHTML=`
+    <div class="scard-head">
+      <span class="scard-name">asana_script.py</span>
+      <div class="scard-btns">
+        <button class="sbtn dl" onclick="dl('${sid}')">⬇ Download</button>
+        <button class="sbtn" onclick="cp('${sid}')">Copy</button>
+        <button class="sbtn" onclick="window.open('https://colab.research.google.com','_blank')">Colab ↗</button>
+      </div>
+    </div>
+    <div class="scard-code">${esc(code)}</div>
+    <div class="scard-foot">
+      <a href="https://colab.research.google.com" target="_blank">Open Google Colab</a> → New notebook → paste → <code>!pip install requests</code> → ▶ Run
+    </div>`;
+  row.appendChild(av); row.appendChild(card); msgs.appendChild(row); msgs.scrollTop=msgs.scrollHeight;
+}
+
+function addTyping(){
+  const msgs=document.getElementById("msgs");
+  const row=document.createElement("div"); row.className="row"; row.id="typing";
+  const av=document.createElement("div"); av.className="av av-a"; av.textContent="A";
+  const b=document.createElement("div"); b.className="bub bub-a";
+  b.innerHTML='<div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
+  row.appendChild(av); row.appendChild(b); msgs.appendChild(row); msgs.scrollTop=msgs.scrollHeight;
+}
+function removeTyping(){ const t=document.getElementById("typing"); if(t) t.remove(); }
+
+function dl(sid){ const c=scripts[sid]; if(!c) return; const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([c],{type:"text/x-python"})); a.download="asana_script.py"; a.click(); }
+function cp(sid){ navigator.clipboard.writeText(scripts[sid]||"").then(()=>alert("Copied!")); }
+
+async function send(){
+  const txt = document.getElementById("txt");
+  const text = txt.value.trim(); if(!text) return;
+  txt.value=""; txt.disabled=true;
+  document.getElementById("send-btn").disabled=true;
+
+  addBubble("user", esc(text));
+  msgHistory.push({role:"user", content:text});
+  addTyping();
+
+  const {url, gid} = getProjectInfo();
+
+  const system = `You are an expert Asana automation engineer. Your only job is to write complete, ready-to-run Python scripts for Google Colab.
+
+Context:
+- Asana PAT: ${PAT}
+- Project URL: ${url||"(user hasn't provided one yet)"}
+- Project GID: ${gid||"(extract from URL above or ask user)"}
+
+Rules — follow every one without exception:
+1. ALWAYS output ONLY a raw Python script. No markdown code fences. No preamble. No explanation outside the script.
+2. Start the script with a \"\"\" docstring summarising what it does.
+3. First lines after imports: TOKEN = "${PAT}" and PROJECT_GID = "${gid||""}"
+4. Use only the requests library (plus Python builtins). Include # !pip install requests as a comment.
+5. End with: if __name__ == "__main__": main()
+6. Handle ALL errors with try/except and print clear progress.
+7. For link field tasks: parse html_notes with a StrikeParser to skip strikethrough text, extract URLs after "Link:" label, blocklist basecamp.com and app.asana.com.
+8. For bulk tasks: always fetch tasks AND subtasks unless user says otherwise.
+9. Scripts must work for ANY complexity — simple or multi-step combinations.
+10. If the user's request is unclear, make a reasonable assumption and note it in the docstring.
+11. Never refuse. Never say you can't. Always produce a working script.`;
+
+  try{
+    const res = await fetch(CLAUDE, {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({
+        model:"claude-sonnet-4-6",
+        max_tokens:4096,
+        system,
+        messages: msgHistory.map(m=>({role:m.role==="agent"?"assistant":m.role, content:m.content}))
+      })
+    });
+    const data  = await res.json();
+    const reply = (data.content?.filter(b=>b.type==="text").map(b=>b.text).join("")||"").trim();
+    removeTyping();
+
+    const sid = "s"+Date.now();
+    scripts[sid] = reply;
+    msgHistory.push({role:"agent", content:reply});
+
+    addBubble("agent","Here's your script — download and run in Colab:");
+    addScriptCard(reply, sid);
+
+  } catch(e){
+    removeTyping();
+    addBubble("agent", `<span style="color:#A32D2D;">Error: ${esc(e.message)}</span><br>Check your internet connection and try again.`);
+  }
+
+  txt.disabled=false;
+  document.getElementById("send-btn").disabled=false;
+  txt.focus();
+}
+</script>
+</body>
+</html>
